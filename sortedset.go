@@ -26,6 +26,7 @@ package sortedset
 
 import (
 	"math/rand"
+	"sync"
 )
 
 type SCORE int64 // the type of score
@@ -39,6 +40,8 @@ type SortedSet struct {
 	length int64
 	level  int
 	dict   map[string]*SortedSetNode
+
+	mutex sync.RWMutex
 }
 
 func createNode(level int, score SCORE, key string, value interface{}) *SortedSetNode {
@@ -200,6 +203,9 @@ func (this *SortedSet) GetCount() int {
 //
 // Time complexity of this method is : O(log(N))
 func (this *SortedSet) PeekMin() *SortedSetNode {
+	this.mutex.RLock()
+	defer this.mutex.RUnlock()
+
 	return this.header.level[0].forward
 }
 
@@ -238,6 +244,9 @@ func (this *SortedSet) PopMax() *SortedSetNode {
 func (this *SortedSet) AddOrUpdate(key string, score SCORE, value interface{}) bool {
 	var newNode *SortedSetNode = nil
 
+	this.mutex.Lock()
+	defer this.mutex.Unlock()
+
 	found := this.dict[key]
 	if found != nil {
 		// score does not change, only update value
@@ -261,6 +270,9 @@ func (this *SortedSet) AddOrUpdate(key string, score SCORE, value interface{}) b
 //
 // Time complexity of this method is : O(log(N))
 func (this *SortedSet) Remove(key string) *SortedSetNode {
+	this.mutex.Lock()
+	defer this.mutex.Unlock()
+
 	found := this.dict[key]
 	if found != nil {
 		this.delete(found.score, found.key)
@@ -295,6 +307,9 @@ func (this *SortedSet) GetByScoreRange(start SCORE, end SCORE, options *GetBySco
 		start, end = end, start
 		excludeStart, excludeEnd = excludeEnd, excludeStart
 	}
+
+	this.mutex.RLock()
+	defer this.mutex.RUnlock()
 
 	//////////////////////////
 	var nodes []*SortedSetNode
@@ -415,6 +430,14 @@ func (this *SortedSet) GetByRankRange(start int, end int, remove bool) []*Sorted
 		start, end = end, start
 	}
 
+	if remove {
+		this.mutex.Lock()
+		defer this.mutex.Unlock()
+	} else {
+		this.mutex.RLock()
+		defer this.mutex.RUnlock()
+	}
+
 	var update [SKIPLIST_MAXLEVEL]*SortedSetNode
 	var nodes []*SortedSetNode
 	var traversed int = 0
@@ -478,6 +501,9 @@ func (this *SortedSet) GetByRank(rank int, remove bool) *SortedSetNode {
 // If node is not found, nil is returned
 // Time complexity : O(1)
 func (this *SortedSet) GetByKey(key string) *SortedSetNode {
+	this.mutex.RLock()
+	defer this.mutex.RUnlock()
+
 	return this.dict[key]
 }
 
@@ -488,6 +514,9 @@ func (this *SortedSet) GetByKey(key string) *SortedSetNode {
 //
 // Time complexity of this method is : O(log(N))
 func (this *SortedSet) FindRank(key string) int {
+	this.mutex.RLock()
+	defer this.mutex.RUnlock()
+
 	var rank int = 0
 	node := this.dict[key]
 	if node != nil {
