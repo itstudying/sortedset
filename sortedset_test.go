@@ -1,10 +1,12 @@
 package sortedset
 
 import (
+	"math/rand"
+	"strconv"
 	"testing"
 )
 
-func checkOrder(t *testing.T, nodes []*SortedSetNode, expectedOrder []string) {
+func checkOrder(t *testing.T, nodes []*SortedSetNodeKV, expectedOrder []string) {
 	if len(expectedOrder) != len(nodes) {
 		t.Errorf("nodes does not contain %d elements", len(expectedOrder))
 	}
@@ -161,4 +163,40 @@ func TestCase2(t *testing.T) {
 
 	nodes = sortedset.GetByScoreRange(500, -500, nil)
 	checkOrder(t, nodes, []string{"g", "f", "e", "a", "h"})
+}
+
+var s *SortedSet
+
+func init() {
+	s = New()
+
+}
+
+func BenchmarkSortedSet_Add(b *testing.B) {
+	// data initialization
+	scores := make([]SCORE, b.N)
+	IDs := make([]string, b.N)
+	for i := range IDs {
+		scores[i] = SCORE(rand.Float64() + float64(rand.Int31n(99)))
+		IDs[i] = strconv.Itoa(i % 10000)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.AddOrUpdate(IDs[i], scores[i], IDs[i])
+	}
+}
+
+func BenchmarkSortedSet_GetRank(b *testing.B) {
+	l := s.GetCount()
+	for i := 0; i < b.N; i++ {
+		s.GetByRank(100000+i%l, false)
+	}
+}
+
+func BenchmarkSortedSet_GetByRankRange(b *testing.B) {
+	l := s.GetCount()
+	for i := 0; i < b.N; i++ {
+		s.GetByRankRange(i%l, i%l+20, false)
+	}
 }
