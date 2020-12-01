@@ -31,19 +31,31 @@ type SortedSetLevel struct {
 
 // Node in skip list
 type SortedSetNode struct {
-	key      string      // unique key of this node
-	Value    interface{} // associated data
-	score    SCORE       // score to determine the order of this node in the set
+	SortedSetNodeKV
 	backward *SortedSetNode
 	level    []SortedSetLevel
 }
 
+// Reset the Node
+func (this *SortedSetNode) Reset() {
+	this.SortedSetNodeKV = SortedSetNodeKV{}
+	this.backward = nil
+	this.level = this.level[:0]
+}
+
+// Node k:v
+type SortedSetNodeKV struct {
+	key   string      // unique key of this node
+	Value interface{} // associated data
+	score SCORE       // score to determine the order of this node in the set
+}
+
 // Get the key of the node
-func (this *SortedSetNode) Key() string {
+func (this *SortedSetNodeKV) Key() string {
 	return this.key
 }
 
 // Get the node of the node
-func (this *SortedSetNode) Score() SCORE {
+func (this *SortedSetNodeKV) Score() SCORE {
 	return this.score
 }
