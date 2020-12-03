@@ -161,6 +161,7 @@ func (this *SortedSet) deleteNode(x *SortedSetNode, update [SKIPLIST_MAXLEVEL]*S
 	if ok {
 		delete(this.dict, x.key)
 		oldNode.Reset()
+		this.nodePool.Put(oldNode)
 	}
 }
 
